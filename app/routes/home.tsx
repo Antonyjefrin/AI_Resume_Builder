@@ -28,10 +28,7 @@ export default function Home() {
       <div
 
           className="absolute inset-0 z-10">
-          <Dots  dotSize={3}
-                 gap={20}
-                 baseColor="#271E37"
-                 activeColor="#00D5FF" />
+          <Dots/>
       </div>
 
           <div className="relative z-40">
