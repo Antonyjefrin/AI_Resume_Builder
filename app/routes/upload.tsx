@@ -3,7 +3,7 @@ import Dots from "~/Components/Dots";
 import NavBar from "~/Components/NavBar";
 import Uploader from "~/Components/Uploader";
 import {usePuterStore} from "~/lib/puter";
-import {useLocation} from "react-router";
+import {useLocation, useNavigate} from "react-router";
 import {convertPdfToImage} from "~/lib/pdf2img";
 import {generateUUID} from "~/lib/utils";
 import {prepareInstructions} from "../../constants";
@@ -12,6 +12,8 @@ const Upload = () => {
 
     const{auth,fs,isLoading,ai,kv} = usePuterStore();
     const location = useLocation();
+    const navigate = useNavigate();
+
     const [isProcessing, setIsProcessing] = useState(false);
     const [statusText, setStatusText] = useState('');
     const [file, setFile] = useState<File|null>(null);
@@ -29,20 +31,23 @@ const Upload = () => {
 
         if(!uploadedFile) return setStatusText("Error: Failed to upload");
         setStatusText("Converting to image");
+        console.log(uploadedFile);
         const imageFile = await convertPdfToImage(file);
         if(!imageFile.file) return setStatusText("Error: Failed to convert image to pdf");
+        console.log(imageFile.file);
 
         setStatusText("uploading the image....");
         const uploadedImage = await fs.upload([imageFile.file]);
         if(!uploadedImage) return setStatusText("Error: Failed to upload");
 
-        setStatusText('Preparing data...');
         const uuid = generateUUID();
         const data = {
             id : uuid,
             resumePath : uploadedFile.path,
             imagePath : uploadedImage.path,
-            companyName, jobTitle, jobDescription,
+            companyName,
+            jobTitle,
+            jobDescription,
             feedback: ''
         }
 
@@ -64,6 +69,7 @@ const Upload = () => {
         await kv.set(`resume:${uuid}`, JSON.stringify(data));
         setStatusText('Analysis complete, redirecting...');
         console.log(data);
+        navigate(`/resume/${uuid}`);
 
     }
 
@@ -78,8 +84,8 @@ const Upload = () => {
         const jobTitle = formData.get('job-title') as string;
         const jobDescription = formData.get('job-description') as string;
 
-       if(!file) return;
-       handleAnalyze({companyName, jobTitle, jobDescription, file})
+        if(!file) return;
+        handleAnalyze({companyName, jobTitle, jobDescription, file})
 
     }
 
@@ -100,32 +106,32 @@ const Upload = () => {
 
             <section className="relative main-section z-20 ">
                 <div className="page-heading ">
-                     <h1
-                     className=" bg-clip-text text-transparent bg-gradient-to-r from-[#AB8C95] via-[#ffffff]  to-[#8E97C5]"
-                     >Smart feedback for your dream job</h1>
+                    <h1
+                        className=" bg-clip-text text-transparent bg-gradient-to-r from-[#AB8C95] via-[#ffffff]  to-[#8E97C5]"
+                    >Smart feedback for your dream job</h1>
                     {isProcessing ? (
                         <>
-                        <h2 className="text-white ">{statusText}</h2>
-                        <img src="/images/resume-scan.gif" alt="resume_gif" className="w-full " />
+                            <h2 className="text-white ">{statusText}</h2>
+                            <img src="/images/resume-scan.gif" alt="resume_gif" className="w-full " />
                         </>
                     ):(
-                        <h2 className="text-white"></h2>
+                        <h2 className="text-white">Drop your resume for an ATS score and improvement tips</h2>
                     )}
                     {!isProcessing && (
                         <form id="upload-form" onSubmit={handleSubmit}>
                             <div className="form-div">
-                                 <label htmlFor="company-name">Company Name</label>
-                                <input className="placeholder:text-black/60 font-bold" type="text" name="company-name" placeholder="company name" id="company-name" />
+                                <label htmlFor="company-name">Company Name</label>
+                                <input type="text" name="company-name" placeholder="company name" id="company-name" />
 
                             </div>
                             <div className="form-div">
                                 <label htmlFor="job-title">Job title</label>
-                                <input className="placeholder:text-black/60 font-bold" type="text" name="job-title" placeholder="job title" id="job-title" />
+                                <input type="text" name="job-title" placeholder="job title" id="job-title" />
 
                             </div>
                             <div className="form-div">
                                 <label htmlFor="job-description">Job description</label>
-                                <textarea className="placeholder:text-black/60 font-bold" rows={5} name="job-description" placeholder="job description" id="job-description" />
+                                <textarea rows={5} name="job-description" placeholder="job description" id="job-description" />
 
                             </div>
                             <div className="form-div">
@@ -134,13 +140,13 @@ const Upload = () => {
                             </div>
 
                             <button className="primary-button" type="submit">
-                                 Analyze resume
+                                Analyze resume
                             </button>
                         </form>
                     )}
                 </div>
             </section>
-            </main>
+        </main>
     )
 }
 export default Upload

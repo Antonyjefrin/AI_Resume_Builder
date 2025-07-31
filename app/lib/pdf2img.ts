@@ -29,10 +29,14 @@ export async function convertPdfToImage(
     file: File
 ): Promise<PdfConversionResult> {
     try {
+        console.log("Loading PDF.js...");
         const lib = await loadPdfJs();
 
+        console.log("Reading array buffer...");
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await lib.getDocument({ data: arrayBuffer }).promise;
+
+        console.log("Got PDF, loading page 1...");
         const page = await pdf.getPage(1);
 
         const viewport = page.getViewport({ scale: 4 });
@@ -42,28 +46,35 @@ export async function convertPdfToImage(
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        if (context) {
-            context.imageSmoothingEnabled = true;
-            context.imageSmoothingQuality = "high";
+        if (!context) {
+            console.error("Canvas context is null");
+            return {
+                imageUrl: "",
+                file: null,
+                error: "Canvas context is null",
+            };
         }
 
-        await page.render({ canvasContext: context!, viewport }).promise;
+        console.log("Rendering PDF to canvas...");
+        await page.render({ canvasContext: context, viewport }).promise;
 
         return new Promise((resolve) => {
+            console.log("Rendering done, converting to blob...");
             canvas.toBlob(
                 (blob) => {
                     if (blob) {
-                        // Create a File from the blob with the same name as the pdf
                         const originalName = file.name.replace(/\.pdf$/i, "");
                         const imageFile = new File([blob], `${originalName}.png`, {
                             type: "image/png",
                         });
 
+                        console.log("Blob conversion success:", imageFile);
                         resolve({
                             imageUrl: URL.createObjectURL(blob),
                             file: imageFile,
                         });
                     } else {
+                        console.error("Blob is null");
                         resolve({
                             imageUrl: "",
                             file: null,
@@ -73,13 +84,14 @@ export async function convertPdfToImage(
                 },
                 "image/png",
                 1.0
-            ); // Set quality to maximum (1.0)
+            );
         });
-    } catch (err) {
+    } catch (err: any) {
+        console.error("PDF conversion failed:", err);
         return {
             imageUrl: "",
             file: null,
-            error: `Failed to convert PDF: ${err}`,
+            error: `Failed to convert PDF: ${err.message || err}`,
         };
     }
 }
