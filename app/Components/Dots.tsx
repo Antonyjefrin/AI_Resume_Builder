@@ -94,13 +94,24 @@ export default function DarkVeil({
                                  }: Props) {
     const ref = useRef<HTMLCanvasElement>(null);
     useEffect(() => {
-        const canvas = ref.current as HTMLCanvasElement;
-        const parent = canvas.parentElement as HTMLElement;
+        const canvas = ref.current;
+        if (!canvas) {
+            console.error("Canvas element not yet mounted");
+            return;
+        }
+
+        const parent = canvas.parentElement;
+        if (!parent) {
+            console.error("Canvas has no parent element");
+            return;
+        }
 
         const renderer = new Renderer({
             dpr: Math.min(window.devicePixelRatio, 2),
             canvas,
         });
+
+        // ...rest of the code unchanged
 
         const gl = renderer.gl;
         const geometry = new Triangle(gl);

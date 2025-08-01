@@ -3,8 +3,10 @@ import Dots from "~/Components/Dots";
 import React, {useEffect, useState} from "react";
 import {usePuterStore} from "~/lib/puter";
 import ATS from "~/Components/ATS";
-import Details from "~/Components/Details";
 import Summary from "~/Components/Summary";
+const LazyDetails = React.lazy(()=>import("~/Components/Details"))
+
+
 
 const Resume = () => {
 
@@ -58,6 +60,7 @@ const Resume = () => {
             </div>
 
             <nav className="resume-nav relative z-30">
+
                 <Link to="/" className="back-button">
                       <img src="/icons/back.svg" alt="logo" className="h-4 w-4 text-white" />
                       <span className="text-white font-semibold">Back to HomePage</span>
@@ -87,7 +90,9 @@ const Resume = () => {
                         <div className="flex flex-col gap-8 animate-in fade-in duration-1000">
                              <Summary feedback={feedback} />
                              <ATS score={feedback.ATS.score || 0} suggestions={feedback.ATS.tips} />
-                             <Details feedback={feedback}/>
+                            <React.Suspense>
+                                <LazyDetails feedback={feedback}/>
+                            </React.Suspense>
                         </div>
                         ):
 
